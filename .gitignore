@@ -63,3 +63,6 @@ target/
 
 # JetBrains
 .idea/
+
+# mac
+.DS_Store

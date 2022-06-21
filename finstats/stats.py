@@ -40,13 +40,15 @@ def finstats():
     default=0
   )
   args = parser.parse_args()
-  cal_alpha_beta(
-    args.stock,
-    args.bench,
-    risk_free=args.riskfree,
-    period=args.period,
-    datalen=args.length
-  )
+
+  if check_args(args):
+    cal_alpha_beta(
+      args.stock,
+      args.bench,
+      risk_free=args.riskfree,
+      period=args.period,
+      datalen=args.length
+    )
 
 def cal_alpha_beta(returns_symbol, benchmark_symbol, risk_free=0, period=DAILY, datalen=1023):
   """
@@ -75,7 +77,7 @@ def cal_alpha_beta(returns_symbol, benchmark_symbol, risk_free=0, period=DAILY, 
   print(pd.DataFrame([{
     "stock": returns_symbol,
     "benchmark": benchmark_symbol, 
-    "beta": benchmark_symbol,
+    "beta": beta,
     "alpha": alpha
   }]))
 
@@ -217,5 +219,14 @@ def adj_returns(returns, risk_free):
   if risk_free == 0 and isinstance(risk_free, (int, float)):
     return returns
   return returns - risk_free
+
+def check_args(args):
+  if args.stock is None:
+    print("finstats: please provide stock code. See 'finstats --help'")
+    return False
+  if args.stock is None:
+    print("finstats: please provide benchmark code. See 'finstats --help'")
+    return False
+  return True
   
 
