@@ -12,4 +12,4 @@ matrix:
     - python: 3.9
   allow_failures:
 install: "pip install numpy pandas requests"
-script: "python runtests.py"
+script: "python runtest.py"
