@@ -8,12 +8,14 @@ from .abstract_provider import abstract_provider
 daily_bar_url = 'https://money.finance.sina.com.cn/quotes_service/api/json_v2.php/CN_MarketData.getKLineData?symbol={}&datalen={}&scale={}&ma={}'
 
 class sina_provider(abstract_provider):
+
+  datalen = 252
   
   def provide_daily_bar(
     self,
     symbol,
-    datalen=1023,
-    scale=240,
+    datalen=datalen,
+    period=240,
     ma=5,
   ):
     """
@@ -24,11 +26,11 @@ class sina_provider(abstract_provider):
     Parameters
     ----------
     symbol: stock code
-    scale: periods. 5、15、30、60,120,240
+    period: periods. 5、15、30、60,120,240
     ma: moving average. 5、10、20、60,120
     datalen: number of records fetched
     """
-    raw = requests.get(daily_bar_url.format(symbol, datalen, scale, ma))
+    raw = requests.get(daily_bar_url.format(symbol, datalen, period, ma))
     raw.encoding='utf-8'
     records = json.loads(raw.text)
     self.fill_return(records)

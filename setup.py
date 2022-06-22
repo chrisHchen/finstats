@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
+from finstats.version import VERSION
 
-VERSION = "0.0.3"
 DESCRIPTION = "Command line tool to get your alpha, beta metrics out of box"
 
 LONG_DESCRIPTION="""finstats is a command line tool to get your 

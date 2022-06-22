@@ -3,6 +3,8 @@ import abc
 
 class abstract_provider():
 
+  datalen = 0
+
   @abc.abstractmethod
   def provide_daily_bar():
     pass

@@ -3,59 +3,57 @@ import numpy as np
 import argparse
 from .provider import Provider
 from .periods import *
+from .version import VERSION
 
 default_provider = Provider['SINA']
 
 def finstats():
-  parser = argparse.ArgumentParser(
-    prog="finstats",
-    description='get financial metrics with finstats'
-  )
-  parser.add_argument(
-    '--stock',
-    '-s', 
-    help="the stock code to fetch. eg: sh600519"
-  )
-  parser.add_argument(
-    '--bench',
-    '-b',
-    help="the benchmark code to fetch. eg: sh000001"
-  )
-  parser.add_argument(
-    '--riskfree',
-    '-r',
-    help="risk free return, default is 0. eg: 0.02",
-    default=0
-  )
-  parser.add_argument(
-    '--period',
-    '-p',
-    help="periodicity of the 'returns' data:: y/q/m/w/d, default is d",
-    default=DAILY
-  )
-  parser.add_argument(
-    '--length',
-    '-l',
-    help="number of records to fetch, default is 1023. eg: 30",
-    default=0
-  )
-  args = parser.parse_args()
+  args = parse_args()
 
   if check_args(args):
-    cal_alpha_beta(
-      args.stock,
-      args.bench,
-      risk_free=args.riskfree,
-      period=args.period,
-      datalen=args.length
+    stocks = args.stock
+    benchmarks = args.bench
+    datalen = args.length
+    riskfree = args.riskfree
+    period = args.period
+
+    return_list, benchmark_return_list = prepare_data_pair(
+      stocks,
+      benchmarks,
+      datalen=datalen
     )
 
-def cal_alpha_beta(returns_symbol, benchmark_symbol, risk_free=0, period=DAILY, datalen=1023):
+    result = []
+    for benchmark, benchmark_return in zip(benchmarks, benchmark_return_list):
+      for stock, returns in zip(stocks, return_list):
+        align_returns, align_benchmark_return = align_series(returns, benchmark_return)
+        alpha, beta = cal_alpha_beta(
+          align_returns,
+          align_benchmark_return,
+          risk_free=riskfree,
+          period=period,
+        )
+        result.append({
+            "stock": stock,
+            "benchmark": benchmark, 
+            "beta": beta,
+            "alpha": alpha
+        })
+
+    print(pd.DataFrame(result).set_index('benchmark'))
+
+
+def cal_alpha_beta(
+  returns,
+  benchmark_returns,
+  risk_free=0,
+  period=DAILY,
+):
   """
   Parameters
   ----------
-  returns_symbol: stock code
-  benchmark_symbol: benchmark code
+  returns: pd.series. stock returns data
+  benchmark_returns: pd.series. benchmark return data
   risk_free: risk free return, usually the treasury bond return or bank interest rate
   period: str
       periodicity of the 'returns' data
@@ -65,24 +63,17 @@ def cal_alpha_beta(returns_symbol, benchmark_symbol, risk_free=0, period=DAILY, 
                 'm':12
                 'w': 52
                 'd': 252
-
-  datalen: number of records
   """
-  returns, benchmark_returns = [
-    provide_return_data(symbol, datalen) for symbol in [returns_symbol, benchmark_symbol]
-  ]
-  returns, benchmark_returns = align_series(returns, benchmark_returns)
   beta = cal_beta(returns, benchmark_returns)
   alpha = cal_alpha(returns, benchmark_returns, beta=beta, risk_free=risk_free, period=period)
-  print(pd.DataFrame([{
-    "stock": returns_symbol,
-    "benchmark": benchmark_symbol, 
-    "beta": beta,
-    "alpha": alpha
-  }]))
+  return alpha, beta
 
 
-def cal_beta(returns, benchmark_returns):
+
+def cal_beta(
+  returns,
+  benchmark_returns,
+):
   """
   Parameters
   ----------
@@ -123,7 +114,7 @@ def cal_beta(returns, benchmark_returns):
     # and `dependent` when calculating covariances. Since we need the centered
     # `independent` to calculate its variance in the next step, we choose to
     # center `independent`.
-
+  
   bentch_return_residual = benchmark_returns - np.mean(benchmark_returns)
   covariances = np.mean(bentch_return_residual * returns)
   # We end up with different variances in each column here because each
@@ -133,6 +124,7 @@ def cal_beta(returns, benchmark_returns):
   bentch_return_residual = np.square(bentch_return_residual)
   independent_variances = np.mean(bentch_return_residual)
   return np.divide(covariances, independent_variances)
+
 
 def cal_alpha(returns, benchmark_returns, beta=None, risk_free=0, period=DAILY):
   """
@@ -197,14 +189,32 @@ def align_series(returns, benchmark_returns):
   return [df_concated.iloc[:,x].values for x in [0, 1]]
 
 
-def provide_return_data(symbol, datalen=1023, scale=240):
+def prepare_data_pair(
+  return_symbols,
+  benchmark_symbols,
+  datalen=default_provider.datalen
+):
+  return_list  = []
+  benchmark_return_list = []
+  for return_symbol in return_symbols:
+    return_list.append(
+      provide_return_data(return_symbol, datalen)
+    )
+  for benchmark_symbol in benchmark_symbols:
+    benchmark_return_list.append(
+      provide_return_data(benchmark_symbol, datalen)
+    )
+  return return_list, benchmark_return_list
+
+
+def provide_return_data(symbol, datalen=default_provider.datalen, period=240):
   """
   fetch data from provider
 
   Parameters
   ----------
   symbol: stock code
-  scale: periods. 5、15、30、60,120,240
+  period: stock period in minutes. 5、15、30、60,120,240
   datalen: number of records
 
   Returns
@@ -212,21 +222,65 @@ def provide_return_data(symbol, datalen=1023, scale=240):
   pd.dataframe
   """
 
-  df = default_provider.provide_daily_bar(symbol, datalen, scale)
+  df = default_provider.provide_daily_bar(symbol, datalen, period)
   return df.set_index('day')[['return']]
+
 
 def adj_returns(returns, risk_free):
   if risk_free == 0 and isinstance(risk_free, (int, float)):
     return returns
   return returns - risk_free
 
+
 def check_args(args):
   if args.stock is None:
     print("finstats: please provide stock code. See 'finstats --help'")
     return False
-  if args.stock is None:
+  if args.bench is None:
     print("finstats: please provide benchmark code. See 'finstats --help'")
     return False
   return True
   
 
+def parse_args():
+  parser = argparse.ArgumentParser(
+    prog="finstats",
+    description='get financial metrics with finstats'
+  )
+  parser.add_argument(
+    '--stock',
+    '-s', 
+    nargs='*',
+    help="the stock code to fetch. eg: sh600519"
+  )
+  parser.add_argument(
+    '--bench',
+    '-b',
+    nargs='*',
+    help="the benchmark code to fetch. eg: sh000001"
+  )
+  parser.add_argument(
+    '--riskfree',
+    '-r',
+    help="risk free return, default is 0. eg: 0.02",
+    default=0
+  )
+  parser.add_argument(
+    '--period',
+    '-p',
+    help="periodicity of the 'returns' data:: y/q/m/w/d, default is d",
+    default=DAILY
+  )
+  parser.add_argument(
+    '--length',
+    '-l',
+    help="number of records to fetch, default is 1023. eg: 30",
+    default=default_provider.datalen
+  )
+  parser.add_argument(
+    '--version',
+    '-v',
+    action='version',
+    version='%(prog)s {}'.format(VERSION)
+  )
+  return parser.parse_args()
