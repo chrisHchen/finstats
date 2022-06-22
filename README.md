@@ -3,7 +3,7 @@
 
 # Introduction 💪
 
-Get your China A-share stock metrics **alpha, beta** with only one line of command 🚀 🚀 🚀.
+Get your China A-share stock metrics **alpha, beta** using only one line of command 🚀 🚀 🚀.
 
 ## Installation 🔌
 ```
@@ -37,6 +37,6 @@ finstats -s sh600519 sh601318 sz300750 -b sh000001 sh000300
 
 <img src="https://github.com/chrisHchen/finstats/blob/master/assets/finstats-001.png" width="440" height="142"/>
 
-# Data Source 🔋：
+# Data Source 🔋
 
 finstats uses Sina HTTP API as its data source

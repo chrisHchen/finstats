@@ -1,0 +1,15 @@
+language: python
+python:
+  - 3.4
+  - 3.7
+  - 3.8
+  - 3.9
+matrix:
+  include:
+    - python: 3.4
+    - python: 3.7
+    - python: 3.8
+    - python: 3.9
+  allow_failures:
+install: "pip install numpy pandas requests"
+script: "python runtests.py"

@@ -26,7 +26,7 @@ def finstats():
     result = []
     for benchmark, benchmark_return in zip(benchmarks, benchmark_return_list):
       for stock, returns in zip(stocks, return_list):
-        align_returns, align_benchmark_return = align_series(returns, benchmark_return)
+        align_returns, align_benchmark_return = align(returns, benchmark_return)
         alpha, beta = cal_alpha_beta(
           align_returns,
           align_benchmark_return,
@@ -52,8 +52,8 @@ def cal_alpha_beta(
   """
   Parameters
   ----------
-  returns: pd.series. stock returns data
-  benchmark_returns: pd.series. benchmark return data
+  returns: np.array. stock returns data
+  benchmark_returns: np.array. benchmark return data
   risk_free: risk free return, usually the treasury bond return or bank interest rate
   period: str
       periodicity of the 'returns' data
@@ -170,19 +170,18 @@ def cal_alpha(returns, benchmark_returns, beta=None, risk_free=0, period=DAILY):
           )
 
 
-def align_series(returns, benchmark_returns):
+def align(returns, benchmark_returns):
   """
   align input dataframe's indices and return series
 
   Parameters
   ----------
-  symbol: stock code
-  scale: periods. 5、15、30、60,120,240
-  datalen: number of records
+  returns: pd.dataframe. returns with day as index
+  benchmark_returns: pd.dataframe. benchmark returns with day as index
 
   Returns
   -------
-  pd.series
+  np.array
   """
   df_concated = pd.concat([returns, benchmark_returns], axis=1)
   df_concated = df_concated.dropna()
