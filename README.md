@@ -1,11 +1,10 @@
-[![PyPI](https://img.shields.io/pypi/v/finstats?color=%234ec726&style=flat-square)](https://pypi.org/project/finstats/)
-
+[![PyPI](https://img.shields.io/pypi/v/finstats?color=%234ec726&style=flat-square)](https://pypi.org/project/finstats/)  [![github action](https://github.com/chrisHchen/finstats/actions/workflows/unittest.yaml/badge.svg)](https://github.com/chrisHchen/finstats/actions/workflows/unittest.yaml)
 
 # Introduction 💪
 
 Get your China A-share stock metrics **alpha, beta** using only one line of command 🚀 🚀 🚀.
 
-## Installation 🔌
+# Installation 🔌
 ```
 pip install finstats
 ```
@@ -23,7 +22,7 @@ pip install finstats
 
 
 use **finstats --help** to see more details
-## example 🌰:
+## example 🍔:
 
 ```bash
 finstats -s sh600519 -b sh000001 -l 500
